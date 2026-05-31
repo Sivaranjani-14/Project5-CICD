@@ -1,0 +1,45 @@
+name: Terraform Deployment Automation
+
+on:
+  push:
+    branches:
+      - main  # Triggers when code is pushed to the main branch
+
+jobs:
+  terraform-pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Clone your code from the repository onto the runner
+    - name: Checkout Source Code
+      uses: actions/checkout@v4
+
+    # 2. Install the official HashiCorp Terraform CLI binary
+    - name: Setup Terraform CLI
+      uses: hashicorp/setup-terraform@v4
+      with:
+        terraform_version: "1.7.5" # Pins version to ensure consistency
+
+    # 3. Log into AWS using your repository secrets
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    # 4. Initialize Terraform (connects to the S3 bucket and downloads providers)
+    - name: Terraform Init
+      run: terraform init
+
+    # 5. Format check to ensure clean code style
+    - name: Terraform Format Check
+      run: terraform fmt -check
+
+    # 6. Generate a dry-run preview execution plan
+    - name: Terraform Plan
+      run: terraform plan -input=false
+
+    # 7. Apply changes automatically (Uncomment the two lines below when ready to go live!)
+    # - name: Terraform Apply
+    #   run: terraform apply -auto-approve -input=false
